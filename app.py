@@ -6,7 +6,7 @@ import os
 app = create_app()
 
 origins = [
-    "https://syncwave.vercel.app/",
+    "https://syncwave-x.vercel.app/",
     "http://localhost:3000",
 ]
 
