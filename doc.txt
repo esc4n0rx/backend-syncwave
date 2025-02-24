@@ -1,0 +1,319 @@
+Documentação da API e Eventos – YouTube Party MVP
+1. Endpoints REST
+1.1. Autenticação e Gerenciamento de Usuários
+Registro de Usuário
+Endpoint: /api/auth/register
+
+Método: POST
+
+Descrição: Registra um novo usuário na plataforma.
+
+JSON de Requisição:
+
+json
+Copiar
+{
+  "nome": "João Silva",
+  "email": "joao@example.com",
+  "usuario": "joao123",
+  "senha": "senhaSegura"
+}
+JSON de Resposta (sucesso - HTTP 201):
+
+json
+Copiar
+{
+  "msg": "Usuário registrado com sucesso."
+}
+Possíveis Erros:
+
+Dados incompletos (HTTP 400): {"msg": "Dados incompletos."}
+Usuário ou email já existente (HTTP 400): {"msg": "Usuário ou email já existente."}
+Login de Usuário
+Endpoint: /api/auth/login
+
+Método: POST
+
+Descrição: Realiza o login e retorna um token JWT para autenticação.
+
+JSON de Requisição:
+
+json
+Copiar
+{
+  "usuario": "joao123",
+  "senha": "senhaSegura"
+}
+JSON de Resposta (sucesso - HTTP 200):
+
+json
+Copiar
+{
+  "access_token": "<JWT_TOKEN>",
+  "user": {
+    "id": 1,
+    "nome": "João Silva",
+    "email": "joao@example.com",
+    "usuario": "joao123"
+  }
+}
+Possíveis Erros:
+
+Dados incompletos (HTTP 400): {"msg": "Dados incompletos."}
+Credenciais inválidas (HTTP 401): {"msg": "Credenciais inválidas."}
+1.2. Gerenciamento de Salas
+Criação de Sala
+Endpoint: /api/rooms/
+
+Método: POST
+
+Descrição: Cria uma nova sala. Apenas o usuário autenticado (host) pode criar uma sala. Se a sala for privada, uma senha deverá ser informada.
+
+JSON de Requisição (Sala Pública):
+
+json
+Copiar
+{
+  "nome": "Sala Pública de Teste",
+  "is_public": true
+}
+JSON de Requisição (Sala Privada):
+
+json
+Copiar
+{
+  "nome": "Sala Privada de Teste",
+  "is_public": false,
+  "senha": "senhaSala"
+}
+JSON de Resposta (sucesso - HTTP 201):
+
+json
+Copiar
+{
+  "msg": "Sala criada com sucesso.",
+  "room": {
+    "id": 1,
+    "nome": "Sala Pública de Teste",
+    "is_public": true,
+    "host_id": 1,
+    "created_at": "2025-02-24T15:30:00"
+  }
+}
+Observação:
+O host é automaticamente associado à sala após a criação.
+
+Associação à Sala (Entrada)
+Endpoint: /api/rooms/join
+
+Método: POST
+
+Descrição: Permite que um usuário entre em uma sala. Se a sala for privada, é necessário fornecer a senha.
+
+JSON de Requisição (Sala Pública):
+
+json
+Copiar
+{
+  "room_id": 1
+}
+JSON de Requisição (Sala Privada):
+
+json
+Copiar
+{
+  "room_id": 2,
+  "senha": "senhaSala"
+}
+JSON de Resposta (sucesso - HTTP 200):
+
+json
+Copiar
+{
+  "msg": "Entrada na sala autorizada.",
+  "room": {
+    "id": 1,
+    "nome": "Sala Pública de Teste",
+    "is_public": true,
+    "host_id": 1,
+    "created_at": "2025-02-24T15:30:00"
+  }
+}
+Possíveis Erros:
+
+ID da sala ausente (HTTP 400): {"msg": "ID da sala é obrigatório."}
+Sala não encontrada (HTTP 404): {"msg": "Sala não encontrada."}
+Senha incorreta para sala privada (HTTP 403): {"msg": "Senha incorreta para sala privada."}
+Usuário já associado (HTTP 200): {"msg": "Usuário já associado à sala.", "room": { ... }}
+Exclusão de Sala
+Endpoint: /api/rooms/<int:room_id>
+
+Método: DELETE
+
+Descrição: Exclui uma sala. Apenas o host (criador) pode realizar essa operação. Antes de excluir, os participantes conectados são notificados via SocketIO.
+
+Requisição:
+Cabeçalho: Token JWT do host.
+
+JSON de Resposta (sucesso - HTTP 200):
+
+json
+Copiar
+{
+  "msg": "Sala deletada com sucesso."
+}
+Possíveis Erros:
+
+Sala não encontrada (HTTP 404): {"msg": "Sala não encontrada."}
+Acesso não autorizado – usuário não é host (HTTP 403): {"msg": "Apenas o host pode excluir a sala."}
+2. Eventos via SocketIO
+Observação:
+A conexão via SocketIO deve ser realizada com o token JWT incluído na query string, por exemplo:
+ws://<seu_servidor>?token=<JWT_TOKEN>
+
+2.1. Eventos de Associação
+join_room
+Descrição: Associa o usuário à sala para receber e enviar eventos.
+
+JSON de Envio:
+
+json
+Copiar
+{
+  "room_id": 1
+}
+Evento Emitido pelo Servidor:
+
+Nome: user_joined
+
+Payload:
+
+json
+Copiar
+{
+  "user_id": 1
+}
+leave_room
+Descrição: Remove o usuário da sala.
+
+JSON de Envio:
+
+json
+Copiar
+{
+  "room_id": 1
+}
+Evento Emitido pelo Servidor:
+
+Nome: user_left
+
+Payload:
+
+json
+Copiar
+{
+  "user_id": 1
+}
+2.2. Eventos de Controle de Vídeo
+play_video
+Descrição: Inicia a reprodução do vídeo. Apenas o host pode emitir este comando e é verificado se há pelo menos 2 participantes na sala.
+
+JSON de Envio:
+
+json
+Copiar
+{
+  "room_id": 1
+}
+Evento Emitido pelo Servidor (sucesso):
+
+Nome: play_video
+
+Payload:
+
+json
+Copiar
+{
+  "msg": "Vídeo iniciado."
+}
+Possíveis Erros:
+Se o usuário não for o host ou não houver participantes suficientes, será emitido um evento error com a mensagem correspondente.
+
+pause_video
+Descrição: Pausa a reprodução do vídeo. Apenas o host pode emitir este comando.
+
+JSON de Envio:
+
+json
+Copiar
+{
+  "room_id": 1
+}
+Evento Emitido pelo Servidor (sucesso):
+
+Nome: pause_video
+
+Payload:
+
+json
+Copiar
+{
+  "msg": "Vídeo pausado."
+}
+Possíveis Erros:
+Se o usuário não for o host, será emitido um evento error com a mensagem correspondente.
+
+2.3. Evento de Chat
+chat_message
+Descrição: Permite o envio e recepção de mensagens em tempo real.
+
+JSON de Envio:
+
+json
+Copiar
+{
+  "room_id": 1,
+  "mensagem": "Olá, pessoal! Vamos assistir juntos."
+}
+Evento Emitido pelo Servidor (para todos na sala):
+
+Nome: chat_message
+
+Payload:
+
+json
+Copiar
+{
+  "user_id": 1,
+  "mensagem": "Olá, pessoal! Vamos assistir juntos."
+}
+2.4. Notificação de Exclusão de Sala
+room_deleted
+Descrição: Notifica todos os usuários conectados na sala que ela foi excluída pelo host.
+Evento Emitido pelo Servidor:
+Nome: room_deleted
+
+Payload:
+
+json
+Copiar
+{
+  "msg": "A sala foi apagada pelo host."
+}
+Fluxo Completo de Integração
+Registro & Login:
+
+Registre os usuários e obtenha os tokens JWT através dos endpoints /api/auth/register e /api/auth/login.
+Criação de Sala:
+
+Utilize o token do host para criar uma sala (pública ou privada) via POST /api/rooms/.
+Associação à Sala:
+
+Com o token de outros usuários, envie o JSON para associação via POST /api/rooms/join.
+Conexão via SocketIO:
+
+Conecte os usuários utilizando o token JWT na query string.
+Teste os eventos join_room, leave_room, chat_message, play_video e pause_video conforme os exemplos acima.
+Exclusão de Sala:
+
+O host pode excluir a sala através do endpoint DELETE /api/rooms/<room_id>. Todos os usuários conectados receberão o evento room_deleted.
