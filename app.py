@@ -6,24 +6,24 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-# Inicializa o SocketIO
+
 socketio = SocketIO(cors_allowed_origins="*")
 
 def create_app():
     app = Flask(__name__)
 
-    # Configuração do CORS
+
     allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
     CORS(app, resources={r"/*": {"origins": allowed_origins}})
 
     app.config["SECRET_KEY"] = "your_secret_key"
 
-    # Inicializa o SocketIO dentro da aplicação
+
     socketio.init_app(app, cors_allowed_origins="*")
 
     return app
 
-# Criando a instância da aplicação
+
 app = create_app()
 
 if __name__ == "__main__":

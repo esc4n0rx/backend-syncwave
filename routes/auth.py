@@ -22,7 +22,6 @@ def register():
     if not all([nome, email, usuario, senha]):
         return jsonify({'msg': 'Dados incompletos.'}), 400
 
-    # Verifica se já existe usuário ou email cadastrado
     if User.query.filter(or_(User.email == email, User.usuario == usuario)).first():
         return jsonify({'msg': 'Usuário ou email já existente.'}), 400
     
