@@ -1,5 +1,6 @@
 Flask
 Flask-SQLAlchemy
+flask_cors
 Flask-JWT-Extended
 Flask-SocketIO
 gunicorn
