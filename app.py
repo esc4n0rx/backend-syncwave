@@ -1,10 +1,12 @@
 import eventlet
-eventlet.monkey_patch()  # ⚠️ Precisa ser chamado antes de qualquer outro import
+eventlet.monkey_patch()  
 
 import os
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from routes.auth import auth_bp
+from routes.room import room_bp
 
 
 socketio = SocketIO(cors_allowed_origins="*")
@@ -17,6 +19,8 @@ def create_app():
 
     app.config["SECRET_KEY"] = "your_secret_key"
 
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(room_bp, url_prefix='/api/rooms')
 
     socketio.init_app(app, cors_allowed_origins="*")
 
