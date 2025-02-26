@@ -13,8 +13,7 @@ def create_app():
     app = Flask(__name__)
 
 
-    allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
-    CORS(app, resources={r"/*": {"origins": allowed_origins}})
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     app.config["SECRET_KEY"] = "your_secret_key"
 
